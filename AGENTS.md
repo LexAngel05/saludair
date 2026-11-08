@@ -249,10 +249,12 @@ docs/
 | Unit tests (watch) | `npm run test:watch` |
 | Type check | `npm run typecheck` |
 | Lint | `npm run lint` |
-| E2E | `npm run test:e2e` (Phase 8) |
-| Build | `npm run build` |
+| E2E (Playwright, installed Chrome) | `npm run test:e2e` |
+| Contrast check | `npm run check:contrast` |
+| Build | `npm run build` (GitHub Pages: `BASE_PATH=/<repo>/ npm run build`) |
 | Preview build | `npm run preview` |
-| Deploy | TBD in Phase 8 |
+| Screenshots | `SCREENSHOTS=1 npx playwright test screenshots` |
+| Deploy | push to `main` → `.github/workflows/deploy.yml` (GitHub Pages) |
 
 ---
 
@@ -293,9 +295,30 @@ docs/
 - [x] **Phase 5 Real device** (2026-11-08, code done; **not yet tested with real hardware**): Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
 - [x] **Phase 6 Validation page** (2026-11-08): all tests, reference import, scatter, metrics export
 - [x] **Phase 7 Info page and polish** (2026-11-08): responsive, dark mode, empty states, accessibility pass, offline check
-- [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
+- [x] **Phase 8** (2026-11-08): E2E tests, deploy config, README for teammates, manual checklist, screenshots
 
-**Next task:** Phase 8 — Playwright E2E with the Simulator (connect → start session → alert appears → stop → summary → CSV download), `npm run test:e2e`; deploy config (GitHub Pages workflow with `BASE_PATH=/<repo>/` or Vercel); `README.md` for teammates (Spanish, how to run/use); `docs/manual-test-checklist.md` (BLE desktop + Android, USB, offline, Android notifications, wake lock, install as app); screenshots of Live, Session detail, Validation.
+**Definition of done (spec §12) — status 2026-11-08:**
+- [x] Works end-to-end with the Simulator.
+- [ ] Works with a real ESP32 over BLE (desktop + Android) and USB — code done, **waiting for firmware/hardware** (see `docs/manual-test-checklist.md`).
+- [x] Loads and works with the network off after the first visit (verified on the production build).
+- [x] A single spike never triggers an alert (unit-tested in `core/alerts.test.ts`).
+- [x] Disconnected / stale / packet loss / reboot / high humidity / warm-up states are visible.
+- [x] Every session and validation test exports to CSV with metrics and settings snapshot.
+- [x] `npm run test`, `npm run test:e2e` and `npm run build` pass.
+- [x] Checked in a real browser, screenshots in `docs/screenshots/` (Live, Session detail, Validation; desktop + mobile).
+- [ ] Deployed over HTTPS — workflow ready (`.github/workflows/deploy.yml`); needs a GitHub repo (user decision).
+
+**Next tasks (all phases done; remaining work needs people/hardware):**
+1. Create the GitHub repo, push, enable Pages → HTTPS URL for Android testing (ask the user before pushing).
+2. Hardware team implements `docs/firmware-contract.md`; run `docs/manual-test-checklist.md` (USB → BLE desktop → Android).
+3. Run the real validation tests and fill in the report; resolve Open questions (thresholds after NOM-172 review → toggle "Umbrales aprobados").
+4. Optional: `npm audit` review of dev dependencies; 320 px / tablet and screen-reader passes.
+
+**Phase 8 notes:**
+- `playwright.config.ts` builds + previews on port 4174 and uses the installed Chrome (`channel: 'chrome'`; set `PW_CHANNEL=chromium` after `npx playwright install chromium` on CI). Service workers blocked in E2E.
+- `e2e/session-flow.spec.ts` — Simulator "Tráfico" ×60 → session → alert banner → stop → detail → CSV download content checks; clean air stays quiet; every page loads.
+- `e2e/screenshots.spec.ts` — `SCREENSHOTS=1` regenerates `docs/screenshots/*.png`.
+- `.github/workflows/deploy.yml` — lint, unit tests, contrast, build with `BASE_PATH=/<repo>/`, deploy to Pages (E2E not run in CI: needs Chrome; add `npx playwright install --with-deps chromium` + `PW_CHANNEL=chromium` to enable).
 
 **Polish notes (Phase 7):**
 - Info page: what PM2.5 is, levels (scale + meanings, provisional/approved chip), LED vs dashboard timing, how to wear it (don't cover the inlet), limitations (calibration, humidity, airflow/placement, not medical, no gases), privacy, sources (WHO 2021 + Imperial County are the ones cited in the proposal; NOM-172 and PMS5003 datasheet as technical references), team credit.
@@ -363,6 +386,7 @@ docs/
 - 2026-11-08 — Phase 5 code done (skill: test-driven-development for BleSource — red first with a fake Bluetooth; SerialSource tests written alongside). 155 tests. Browser: BLE + USB buttons visible in Chrome; **real ESP32 not tested** (no hardware yet) → manual checklist. Found & fixed: implicit-return `useEffect` in AppLayout crashed the page in dev ("destroy is not a function") — always use braces in effects. — Next: Phase 6.
 - 2026-11-08 — Phase 6 done (skills: test-driven-development — referenceAlign/validation tests red first, hand-computed fixtures incl. PST/PDT; dataviz for the scatter: ≥ 2 series → legend, 1:1 reference line dashed/recessive). 171 tests. Browser: injected a synthetic 12 h reference session + hourly dataset via Vite dynamic import → page recovered device = 1.400 × ref + 2.00, n = 12, r = 1.000; saved correction 0.714 / −1.43. Synthetic data removed afterwards. Not yet exercised in the browser: CSV file picker (needs a real file), the other five tests with recorded sessions (logic covered by unit tests). — Next: Phase 7.
 - 2026-11-08 — Phase 7 done (skills: frontend-ui-engineering — accessibility/responsive checklist; dataviz guidance kept for charts). Checked: mobile 375 px (no horizontal scroll), light + dark, offline with server stopped, contrast script. Not checked: 320 px and tablet widths explicitly, screen reader pass. — Next: Phase 8.
+- 2026-11-08 — Phase 8 done (no Playwright skill exists — used Playwright directly; frontend-ui-engineering for the final fixes). E2E 3/3 passing against the production build; screenshots generated and reviewed; fixed "Simulador (Simulador)" duplicate label. Not done (needs user/team): GitHub repo + deploy, real hardware tests. — Next: see "Next tasks" above.
 
 ---
 
@@ -380,6 +404,11 @@ docs/
 | 2026-11-08 | ~~System font stack~~ → Manrope Variable self-hosted via `@fontsource-variable/manrope` (bundled, precached as woff2) | User asked for a more attractive UI; bundled font keeps "no external requests" and works offline |
 | 2026-11-08 | Visual system: teal brand, cards 16px / controls 10px / chips full radius, one soft header glow, level glyphs (circle / triangle / square) + text | Calm, not template-looking; level never conveyed by color alone |
 | 2026-11-08 | Theme toggle (auto / claro / oscuro) added early, stored in localStorage (`saludair-theme`) with a pre-paint script in `index.html` | Per-device UI preference, not app data |
+| 2026-11-08 | Own LTTB decimation (`core/decimate.ts`) instead of Chart.js Decimation; linear time axis (no date adapter) | Plugin can't guarantee null gaps survive; fewer dependencies |
+| 2026-11-08 | Alerts use the 5-min mean once it is "estimado" (≥ 1 min valid data), not only when complete | Alerts become available ~3 min after warm-up; persistence (2 min) still prevents single-spike alerts |
+| 2026-11-08 | Live means use raw pm25; correction factor applies only to session stats/charts/exports when "Corregido" is selected | Spec §8.1 defines Live means on raw values; §6 corrections at read time |
+| 2026-11-08 | Reference fit is device = m·reference + b (EPA convention); correction offered as its inverse (raw − b)/m, saved but left disabled | Standard sensor-evaluation practice; spec says correction off by default |
+| 2026-11-08 | Missing seq during a BLE gap counts as packet loss; disconnects counted separately | Spec §5 defines loss as missing seq within a boot segment |
 | 2026-11-08 | Settings stored as a single Dexie row (`settings` table, id `current`) merged over defaults | Adding new settings later doesn't need a migration |
 
 ---

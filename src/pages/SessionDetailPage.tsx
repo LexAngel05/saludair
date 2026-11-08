@@ -109,7 +109,7 @@ export function SessionDetailPage() {
               <p className="text-lg font-semibold">{formatDateTime(session.startedAt)}</p>
               <p className="mt-1 text-sm text-ink-muted">
                 {formatDuration(endedAt - session.startedAt)} · {es.sources[session.source]}
-                {session.deviceName ? ` (${session.deviceName})` : ''}
+                {session.deviceName && session.deviceName !== es.sources[session.source] ? ` (${session.deviceName})` : ''}
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {session.testType !== 'none' && <Chip tone="brand">{es.testTypes[session.testType]}</Chip>}

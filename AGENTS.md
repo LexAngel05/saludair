@@ -292,10 +292,16 @@ docs/
 - [x] **Phase 4 Sessions** (2026-11-08): persistence, list, detail, charts, CSV/JSON export, backup/restore
 - [x] **Phase 5 Real device** (2026-11-08, code done; **not yet tested with real hardware**): Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
 - [x] **Phase 6 Validation page** (2026-11-08): all tests, reference import, scatter, metrics export
-- [ ] **Phase 7 Info page and polish:** responsive, dark mode, empty states, accessibility pass, offline check
+- [x] **Phase 7 Info page and polish** (2026-11-08): responsive, dark mode, empty states, accessibility pass, offline check
 - [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
 
-**Next task:** Phase 7 — Info page content (what PM2.5 is, levels, LED vs dashboard timing, limitations: calibration, humidity, airflow, placement/air inlet, sources from the proposal), polish: responsive check at 320/768/1024/1440, light/dark, empty states, accessibility pass (keyboard, headings, contrast, aria), offline check of the production build.
+**Next task:** Phase 8 — Playwright E2E with the Simulator (connect → start session → alert appears → stop → summary → CSV download), `npm run test:e2e`; deploy config (GitHub Pages workflow with `BASE_PATH=/<repo>/` or Vercel); `README.md` for teammates (Spanish, how to run/use); `docs/manual-test-checklist.md` (BLE desktop + Android, USB, offline, Android notifications, wake lock, install as app); screenshots of Live, Session detail, Validation.
+
+**Polish notes (Phase 7):**
+- Info page: what PM2.5 is, levels (scale + meanings, provisional/approved chip), LED vs dashboard timing, how to wear it (don't cover the inlet), limitations (calibration, humidity, airflow/placement, not medical, no gases), privacy, sources (WHO 2021 + Imperial County are the ones cited in the proposal; NOM-172 and PMS5003 datasheet as technical references), team credit.
+- Code splitting: all pages except Live are `React.lazy`; Live lazy-loads `TimeSeriesChart` (Chart.js). Main chunk 408 kB (129 kB gzip); no size warning. All chunks are precached by the SW.
+- `npm run check:contrast` — computes WCAG ratios for every text/background token pair in light and dark (fails < 4.5). Fixed light `--ink-faint` (was 4.0).
+- Offline verified on the production build: after first visit, stopping the server → app loads, Simulator connects, chart chunk and lazy pages load from the SW cache, no console errors.
 
 **Validation map (Phase 6):**
 - `core/referenceAlign.ts` — `zonedToUtc` (Intl-based, DST-aware, no library), `parseReferenceCsv` (`,`/`;`, decimal comma with `;`, header auto-detect, `YYYY-MM-DD HH:mm`, `DD/MM/YYYY HH:mm`, ISO with Z/offset, `24:00`; end-of-interval stamps shifted back by the detected resolution; rejects counted), `alignToBins` (≥ 75 % completeness on both sides; hourly or 10-min), `compareMetrics` (n, means, bias = mean(device − ref), MAE, RMSE, Pearson r, R², OLS **device = slope × reference + intercept**, `sufficient` = n ≥ 10), `correctionFromFit` (inverts the fit → corrected = (raw − b)/m).
@@ -356,6 +362,7 @@ docs/
 - 2026-11-08 — Phase 4 done (skills: test-driven-development for CSV/backup/recorder — red first; frontend-ui-engineering). 147 tests. Browser check: Simulator → session with tag → stop → detail with chart, alert span, summary; no console errors. Bug found in the browser and fixed with a reproduction test: alert still open at stop was saved with peak 0. — Next: Phase 5.
 - 2026-11-08 — Phase 5 code done (skill: test-driven-development for BleSource — red first with a fake Bluetooth; SerialSource tests written alongside). 155 tests. Browser: BLE + USB buttons visible in Chrome; **real ESP32 not tested** (no hardware yet) → manual checklist. Found & fixed: implicit-return `useEffect` in AppLayout crashed the page in dev ("destroy is not a function") — always use braces in effects. — Next: Phase 6.
 - 2026-11-08 — Phase 6 done (skills: test-driven-development — referenceAlign/validation tests red first, hand-computed fixtures incl. PST/PDT; dataviz for the scatter: ≥ 2 series → legend, 1:1 reference line dashed/recessive). 171 tests. Browser: injected a synthetic 12 h reference session + hourly dataset via Vite dynamic import → page recovered device = 1.400 × ref + 2.00, n = 12, r = 1.000; saved correction 0.714 / −1.43. Synthetic data removed afterwards. Not yet exercised in the browser: CSV file picker (needs a real file), the other five tests with recorded sessions (logic covered by unit tests). — Next: Phase 7.
+- 2026-11-08 — Phase 7 done (skills: frontend-ui-engineering — accessibility/responsive checklist; dataviz guidance kept for charts). Checked: mobile 375 px (no horizontal scroll), light + dark, offline with server stopped, contrast script. Not checked: 320 px and tablet widths explicitly, screen reader pass. — Next: Phase 8.
 
 ---
 

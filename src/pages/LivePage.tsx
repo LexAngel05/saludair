@@ -1,4 +1,7 @@
-import { TimeSeriesChart } from '../charts/TimeSeriesChart';
+import { lazy, Suspense } from 'react';
+
+// Chart.js is the heaviest dependency; load it only once there is data to plot.
+const TimeSeriesChart = lazy(() => import('../charts/TimeSeriesChart').then((m) => ({ default: m.TimeSeriesChart })));
 import { AlertBanner } from '../components/AlertBanner';
 import { ConnectionCard } from '../components/ConnectionCard';
 import { Disclaimer } from '../components/Disclaimer';
@@ -130,14 +133,16 @@ export function LivePage() {
             {connected && live.invalidLines > 0 && <span className="text-xs text-ink-faint">{s.invalidLines(live.invalidLines)}</span>}
           </div>
           {snap.trend.length > 1 ? (
-            <div className="mt-3">
-              <TimeSeriesChart
-                points={snap.trend}
-                thresholds={settings.thresholds}
-                xMin={live.now - 10 * 60_000}
-                xMax={live.now}
-                ariaLabel={s.trendAria}
-              />
+            <div className="mt-3 min-h-[220px]">
+              <Suspense fallback={null}>
+                <TimeSeriesChart
+                  points={snap.trend}
+                  thresholds={settings.thresholds}
+                  xMin={live.now - 10 * 60_000}
+                  xMax={live.now}
+                  ariaLabel={s.trendAria}
+                />
+              </Suspense>
             </div>
           ) : (
             <EmptyState icon={<Icon name="trend" />} text={s.trendEmpty} />

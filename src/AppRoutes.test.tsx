@@ -13,15 +13,15 @@ function renderAt(path: string) {
 }
 
 describe('AppRoutes', () => {
-  it('shows the Live page with the disclaimer at /', () => {
+  it('shows the Live page with the disclaimer at /', async () => {
     renderAt('/');
-    expect(screen.getByRole('heading', { level: 1, name: es.pages.live.title })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: es.pages.live.title })).toBeInTheDocument();
     expect(screen.getByText(es.disclaimer)).toBeInTheDocument();
   });
 
-  it('shows the disclaimer on Info', () => {
+  it('shows the disclaimer on Info', async () => {
     renderAt('/informacion');
-    expect(screen.getByRole('heading', { level: 1, name: es.pages.info.title })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: es.pages.info.title })).toBeInTheDocument();
     expect(screen.getByText(es.disclaimer)).toBeInTheDocument();
   });
 
@@ -31,15 +31,15 @@ describe('AppRoutes', () => {
     ['/validacion', es.pages.validation.title],
     ['/configuracion', es.pages.settings.title],
     ['/no-existe', es.pages.notFound.title],
-  ])('routes %s', (path, title) => {
+  ])('routes %s', async (path, title) => {
     renderAt(path);
-    expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: title })).toBeInTheDocument();
   });
 
-  it('renders all five nav entries', () => {
+  it('renders all five nav entries', async () => {
     renderAt('/');
-    const navs = screen.getAllByRole('navigation', { name: es.app.mainNav });
-    expect(navs.length).toBeGreaterThan(0);
+    await screen.findByRole('heading', { level: 1, name: es.pages.live.title });
+    expect(screen.getAllByRole('navigation', { name: es.app.mainNav }).length).toBeGreaterThan(0);
     for (const label of Object.values(es.nav)) {
       expect(screen.getAllByRole('link', { name: new RegExp(label) }).length).toBeGreaterThan(0);
     }

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { SIMULATOR } from '../config/simulator';
+import { detectSupport } from '../platform/support';
 import { SIM_SCENARIOS, type SimScenario } from '../device/simulator';
 import { es } from '../i18n/es';
 import { liveStore, type LiveState } from '../state/liveStore';
@@ -12,6 +14,7 @@ export function ConnectionCard({ live }: { live: LiveState }) {
   const s = es.pages.live;
   const connected = live.kind !== null;
   const isSim = live.kind === 'simulator';
+  const [support] = useState(() => detectSupport());
 
   return (
     <Card>
@@ -20,17 +23,45 @@ export function ConnectionCard({ live }: { live: LiveState }) {
         {connected && <span className="text-xs font-medium text-ink-muted">{live.deviceName}</span>}
       </div>
 
+      {live.error && (
+        <p role="alert" className="mt-3 rounded-[10px] bg-lvl-elevated-bg px-3 py-2 text-sm text-lvl-elevated-fg">
+          {live.error}
+        </p>
+      )}
+
       {!connected && (
         <div className="mt-4 grid gap-2">
-          <button type="button" disabled className={`${btn} justify-start border border-line bg-surface-2 text-ink-faint`}>
-            <Icon name="bluetooth" size={18} />
-            {s.connectBle}
-          </button>
-          <button type="button" disabled className={`${btn} justify-start border border-line bg-surface-2 text-ink-faint`}>
-            <Icon name="usb" size={18} />
-            {s.connectUsb}
-          </button>
-          <p className="text-xs text-ink-faint">{s.connectSoon}</p>
+          {support.ble ? (
+            <button
+              type="button"
+              onClick={() => void liveStore.connectBle()}
+              className={`${btn} justify-start bg-brand text-brand-ink hover:opacity-90`}
+            >
+              <Icon name="bluetooth" size={18} />
+              <span className="text-left">
+                {s.connectBle}
+                <span className="block text-xs font-medium opacity-80">{s.connectBleHint}</span>
+              </span>
+            </button>
+          ) : (
+            <p className="rounded-[10px] bg-surface-2 px-3 py-2 text-sm text-ink-muted">
+              {!support.secure ? es.support.insecure : support.ios ? es.support.ios : es.support.noBle}
+            </p>
+          )}
+          {support.serial && (
+            <button
+              type="button"
+              onClick={() => void liveStore.connectSerial()}
+              className={`${btn} justify-start border border-line text-ink hover:bg-surface-2`}
+            >
+              <Icon name="usb" size={18} />
+              <span className="text-left">
+                {s.connectUsb}
+                <span className="block text-xs font-medium text-ink-muted">{s.connectUsbHint}</span>
+              </span>
+            </button>
+          )}
+          {support.ble && <p className="text-xs text-ink-faint">{es.support.reloadHint}</p>}
         </div>
       )}
 
@@ -76,7 +107,11 @@ export function ConnectionCard({ live }: { live: LiveState }) {
         </div>
 
         {!connected && (
-          <button type="button" onClick={() => void liveStore.connectSimulator()} className={`${btn} w-full bg-brand text-brand-ink hover:opacity-90`}>
+          <button
+            type="button"
+            onClick={() => void liveStore.connectSimulator()}
+            className={`${btn} w-full border border-brand text-brand hover:bg-brand-soft`}
+          >
             <Icon name="play" size={18} />
             {s.connectSim}
           </button>

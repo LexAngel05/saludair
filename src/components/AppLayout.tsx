@@ -37,10 +37,14 @@ export function AppLayout() {
   const { pathname } = useLocation();
 
   // Keep the app-wide live engine on the current settings.
-  useEffect(() => liveStore.setSettings(settings), [settings]);
+  useEffect(() => {
+    liveStore.setSettings(settings);
+  }, [settings]);
 
   // Each page starts at the top.
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   useEffect(() => {
     const onReady = () => setOfflineReady(true);

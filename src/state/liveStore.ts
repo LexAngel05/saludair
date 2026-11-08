@@ -6,7 +6,9 @@ import { lossPercent } from '../core/sequence';
 import { DeviceStream, type StreamPacket } from '../device/deviceStream';
 import type { SimScenario } from '../device/simulator';
 import { SimulatorSource } from '../device/simulatorSource';
-import type { DeviceSource, LinkState, SourceKindLive } from '../device/types';
+import { BleSource } from '../device/bleSource';
+import { SerialSource } from '../device/serialSource';
+import { DeviceError, type DeviceSource, type LinkState, type SourceKindLive } from '../device/types';
 import { es } from '../i18n/es';
 import { formatNumber } from '../lib/format';
 import { playChime, requestNotificationPermission, showSystemNotification, vibrate } from '../platform/notify';
@@ -117,7 +119,7 @@ export class LiveStore {
     this.stream = new DeviceStream(source, {
       packet: (p) => this.handlePacket(p),
       link: (state, t) => this.handleLink(state, t),
-      error: (err) => this.patch({ error: err.message }),
+      error: (err) => this.patch({ error: es.deviceErrors[err.code] || null }),
     });
     this.patch({ kind: source.kind, deviceName: source.deviceName, error: null, banner: null, link: 'connecting' });
     try {
@@ -125,10 +127,21 @@ export class LiveStore {
     } catch (e) {
       this.stream.detach();
       this.stream = null;
-      this.patch({ link: 'disconnected', kind: null, error: e instanceof Error ? e.message : String(e) });
-      throw e;
+      // A cancelled chooser is not an error worth showing.
+      const msg = e instanceof DeviceError ? es.deviceErrors[e.code] : es.deviceErrors['connection-failed'];
+      this.patch({ link: 'disconnected', kind: null, error: msg || null });
+      return;
     }
+    this.patch({ deviceName: source.deviceName });
     this.startRefresh();
+  }
+
+  connectBle() {
+    return this.connect(new BleSource());
+  }
+
+  connectSerial() {
+    return this.connect(new SerialSource());
   }
 
   async connectSimulator() {

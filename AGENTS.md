@@ -290,12 +290,18 @@ docs/
 - [x] **Phase 2 Core logic** (2026-11-08): averages, levels, alert state machine, quality flags, stats + tests
 - [x] **Phase 3 Live page** + notifications (service worker), wake lock (2026-11-08)
 - [x] **Phase 4 Sessions** (2026-11-08): persistence, list, detail, charts, CSV/JSON export, backup/restore
-- [ ] **Phase 5 Real device:** Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
+- [x] **Phase 5 Real device** (2026-11-08, code done; **not yet tested with real hardware**): Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
 - [ ] **Phase 6 Validation page:** all tests, reference import, scatter, metrics export
 - [ ] **Phase 7 Info page and polish:** responsive, dark mode, empty states, accessibility pass, offline check
 - [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
 
-**Next task:** Phase 5 — real device: `bleSource` (Web Bluetooth, NUS UUIDs from `config/device.ts`, name-prefix filter, notifications on TX, `gattserverdisconnected` → reconnect with backoff to the same `BluetoothDevice`, reconnect on `visibilitychange`), `serialSource` (Web Serial, `TextDecoderStream`), browser-support detection (hide USB where unsupported, clear message on Safari/iOS), enable the buttons in `ConnectionCard`, `docs/firmware-contract.md`.
+**Next task:** Phase 6 — Validation page: guided flows per test (start a session with `testType` + `testParams`), results per test (environments table, repeatability per run/across runs, battery runtime + mV curve, BLE range loss per distance + reconnect time, LED vs dashboard mismatch %), reference CSV import (preview, timezone, start/end-of-hour, rejected rows), hourly alignment (≥ 75 %) or 10-min, metrics (n, means, bias, MAE, RMSE, r, R², fit), scatter with 1:1 and fit lines, "muestra insuficiente" if n < 10, offer fit as correction factor, metrics CSV export. Pure logic in `core/validation.ts` + `core/referenceAlign.ts`, tests first.
+
+**Device map (Phase 5):**
+- `device/bleSource.ts` — chooser filtered by `namePrefix` + NUS service; TX notifications decoded with a streaming `TextDecoder` (multi-byte chars split across notifications are safe); unexpected drop → `reconnecting`, retry same device with backoff 1 s → 30 s, immediate retry on `visibilitychange` visible; user disconnect never retries. Errors mapped to `DeviceError` codes (cancelled chooser = `user-cancelled`, not shown).
+- `device/serialSource.ts` — Web Serial 115200 baud, read loop with streaming decoder; unplug → `reconnecting`, re-plug of the same port → reopen.
+- `platform/support.ts` — `detectSupport()` → ble / serial / ios / secure. `ConnectionCard` hides USB where unsupported and explains iOS / non-Chrome / non-HTTPS.
+- `docs/firmware-contract.md` — for the hardware team: transport, line format, ranges, empty optional fields, reboot/seq rules, LED thresholds, Arduino pseudocode, self-test.
 
 **Sessions map (Phase 4):**
 - `state/recorder.ts` — `SessionRecorder(db, events)`; readings buffered and `bulkAdd`ed every `dbFlushIntervalMs` (+ on pagehide/hidden via `state/recorderInstance.ts`); alert episodes (one row per episode, level = highest, peak) and link events written as they happen through a serialized write queue. Settings snapshot = `structuredClone(settings)` at start. Wake lock now tied to an active session.
@@ -340,6 +346,7 @@ docs/
 - 2026-11-08 — Phase 2 done (skill: test-driven-development; alerts/quality/stats tests seen failing first; averaging/levels tests written alongside). 121 tests passing. — Next: Phase 3.
 - 2026-11-08 — Phase 3 done (skills: dataviz for the trend chart — single series, no legend, bands labelled with text, gaps as gaps, tooltip; frontend-ui-engineering). 130 tests. Verified in browser with Simulator "Tráfico" ×60: Elevado alert banner fired, then cleared via hysteresis; no console errors. Wake lock not available in the preview pane (fallback message shown) — check on Android. — Next: Phase 4.
 - 2026-11-08 — Phase 4 done (skills: test-driven-development for CSV/backup/recorder — red first; frontend-ui-engineering). 147 tests. Browser check: Simulator → session with tag → stop → detail with chart, alert span, summary; no console errors. Bug found in the browser and fixed with a reproduction test: alert still open at stop was saved with peak 0. — Next: Phase 5.
+- 2026-11-08 — Phase 5 code done (skill: test-driven-development for BleSource — red first with a fake Bluetooth; SerialSource tests written alongside). 155 tests. Browser: BLE + USB buttons visible in Chrome; **real ESP32 not tested** (no hardware yet) → manual checklist. Found & fixed: implicit-return `useEffect` in AppLayout crashed the page in dev ("destroy is not a function") — always use braces in effects. — Next: Phase 6.
 
 ---
 

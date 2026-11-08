@@ -4,6 +4,8 @@ Installable web app (PWA) for **SaludAIR**, a low-cost wearable PM2.5 monitor fo
 with asthma in Mexicali / Valle de Mexicali (Chemistry course project, CETYS Universidad —
 Ángel Amaya, Román Meza, Clío Parra, Raúl Solís).
 
+**Live app:** https://lexangel05.github.io/saludair/ (open it in Chrome/Edge on a computer or Chrome on Android; install it as an app from the browser menu).
+
 > SaludAIR es un prototipo educativo. Sus lecturas son aproximadas y no sustituyen la
 > indicación de un profesional de salud ni las estaciones oficiales de monitoreo.
 

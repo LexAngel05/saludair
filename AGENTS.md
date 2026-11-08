@@ -306,10 +306,10 @@ docs/
 - [x] Every session and validation test exports to CSV with metrics and settings snapshot.
 - [x] `npm run test`, `npm run test:e2e` and `npm run build` pass.
 - [x] Checked in a real browser, screenshots in `docs/screenshots/` (Live, Session detail, Validation; desktop + mobile).
-- [ ] Deployed over HTTPS — workflow ready (`.github/workflows/deploy.yml`); needs a GitHub repo (user decision).
+- [x] Deployed over HTTPS: **https://lexangel05.github.io/saludair/** (repo https://github.com/LexAngel05/saludair, public; GitHub Pages source = GitHub Actions; every push to `main` redeploys).
 
 **Next tasks (all phases done; remaining work needs people/hardware):**
-1. Create the GitHub repo, push, enable Pages → HTTPS URL for Android testing (ask the user before pushing).
+1. ~~Create the GitHub repo and deploy~~ — done 2026-11-08 (see Definition of done). Push to `main` only when the user asks.
 2. Hardware team implements `docs/firmware-contract.md`; run `docs/manual-test-checklist.md` (USB → BLE desktop → Android).
 3. Run the real validation tests and fill in the report; resolve Open questions (thresholds after NOM-172 review → toggle "Umbrales aprobados").
 4. Optional: `npm audit` review of dev dependencies; 320 px / tablet and screen-reader passes.
@@ -387,6 +387,7 @@ docs/
 - 2026-11-08 — Phase 6 done (skills: test-driven-development — referenceAlign/validation tests red first, hand-computed fixtures incl. PST/PDT; dataviz for the scatter: ≥ 2 series → legend, 1:1 reference line dashed/recessive). 171 tests. Browser: injected a synthetic 12 h reference session + hourly dataset via Vite dynamic import → page recovered device = 1.400 × ref + 2.00, n = 12, r = 1.000; saved correction 0.714 / −1.43. Synthetic data removed afterwards. Not yet exercised in the browser: CSV file picker (needs a real file), the other five tests with recorded sessions (logic covered by unit tests). — Next: Phase 7.
 - 2026-11-08 — Phase 7 done (skills: frontend-ui-engineering — accessibility/responsive checklist; dataviz guidance kept for charts). Checked: mobile 375 px (no horizontal scroll), light + dark, offline with server stopped, contrast script. Not checked: 320 px and tablet widths explicitly, screen reader pass. — Next: Phase 8.
 - 2026-11-08 — Phase 8 done (no Playwright skill exists — used Playwright directly; frontend-ui-engineering for the final fixes). E2E 3/3 passing against the production build; screenshots generated and reviewed; fixed "Simulador (Simulador)" duplicate label. Not done (needs user/team): GitHub repo + deploy, real hardware tests. — Next: see "Next tasks" above.
+- 2026-11-08 — Published (user approved): created public repo LexAngel05/saludair in the browser, pushed `main`, set Pages source to GitHub Actions; first workflow run green (lint, tests, contrast, build, deploy). Live site checked: HTTPS, Web Bluetooth available, SW scope `/saludair/`, manifest/icons 200, Simulator + chart work, no console errors. — Next: hardware testing with the checklist (Android over the HTTPS URL).
 
 ---
 
@@ -421,4 +422,4 @@ docs/
 - Which reference data, and can we co-locate the device with it?
 - Is 2 s between packets OK for battery life, or 5 s?
 - Which phone(s) will we test on (Android model / Chrome version)?
-- Deploy target: GitHub Pages or Vercel? (affects `base` path in `vite.config.ts`)
+- ~~Deploy target~~ — decided 2026-11-08: GitHub Pages, repo `LexAngel05/saludair` (public), `BASE_PATH=/saludair/` set by the workflow.

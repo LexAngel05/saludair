@@ -288,14 +288,22 @@ docs/
 - [x] **Phase 0 Setup** (2026-11-08): tooling, strict TS, Tailwind, routing, i18n, settings defaults, Dexie schema v1, PWA skeleton, CI-ready scripts
 - [x] **Phase 1 Data layer** (2026-11-08): line parser + tests, DeviceSource, Simulator
 - [x] **Phase 2 Core logic** (2026-11-08): averages, levels, alert state machine, quality flags, stats + tests
-- [ ] **Phase 3 Live page** + notifications (service worker), wake lock
+- [x] **Phase 3 Live page** + notifications (service worker), wake lock (2026-11-08)
 - [ ] **Phase 4 Sessions:** persistence, list, detail, charts, CSV/JSON export, backup/restore
 - [ ] **Phase 5 Real device:** Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
 - [ ] **Phase 6 Validation page:** all tests, reference import, scatter, metrics export
 - [ ] **Phase 7 Info page and polish:** responsive, dark mode, empty states, accessibility pass, offline check
 - [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
 
-**Next task:** Phase 3 — Live page wired to a `DeviceStream` (Simulator first): live engine (recent buffer → 1-min / 5-min means → `levelFromWindow` → `stepAlert` → quality flags), status bar, sparkline with threshold bands, alerts banner + `showNotification` via service worker + vibrate + optional sound, Screen Wake Lock during sessions.
+**Next task:** Phase 4 — sessions: recorder subscribed to `liveStore.onPacket/onAlert/onLink` (batched Dexie writes every `dbFlushIntervalMs`), start/stop with tags + test type on Live, wake lock tied to an active session, Sessions list with filters, Session detail (TimeSeriesChart with alert spans, summary from `summarizeSession`, raw/corrected toggle), CSV export with metadata header, JSON backup/restore, Settings form, reset data.
+
+**Live map (Phase 3):**
+- `core/liveEngine.ts` — pure: `addPacket` → alert events (5-min mean from packet timestamps; alerts use the mean once it is at least "estimado"), `pause(t)` on link loss, `snapshot({now, link, …})` → short/level/hour means, flags, alert state, 10-min trend with null gaps. Keeps ~1 h in memory.
+- `core/decimate.ts` — LTTB per gap-free segment (gaps preserved). Chart.js Decimation plugin NOT used.
+- `state/liveStore.ts` — singleton `liveStore` (`useLive()` hook): connect(source) / connectSimulator / setSimSpeed / disconnect, alert delivery (system notification via SW registration → vibrate → optional WebAudio chime; banner always). Listeners for the recorder: `onPacket`, `onAlert`, `onLink`. 1 s refresh is display-only.
+- `state/settings.tsx` — `SettingsProvider` / `useSettings()` (Dexie-backed); `AppLayout` pushes settings into `liveStore`.
+- `platform/notify.ts`, `platform/useWakeLock.ts` (currently held while connected; Phase 4 switches it to "during a session").
+- `charts/TimeSeriesChart.tsx` — linear time axis (no date adapter needed), level bands with text labels, dashed alert spans, tooltip; `charts/useChartTheme.ts` reads CSS tokens and reacts to theme changes.
 
 **Core map (Phase 2)** — all pure, all tested:
 - `core/averaging.ts` — `windowMean(readings, endT, windowMs, s)` over (end − window, end], warm-up excluded, `complete` at ≥ 75 % of expected samples, `coveredMs` = count × interval; `rollingMeans` (O(n) two-pointer); `applyCorrection` (read-time only).
@@ -322,6 +330,7 @@ docs/
 - 2026-11-08 — User asked to keep advancing through phases without waiting for "continúa" between them ("hay que avanzar hasta donde se pueda"); still commit + update this file per phase. Hardware-dependent checks (real BLE/USB, Android) go to the manual checklist.
 - 2026-11-08 — Phase 1 done (skill: test-driven-development; tests written first, seen failing, then implemented). 69 tests passing. Note: `erasableSyntaxOnly` forbids constructor parameter properties — declare fields explicitly. — Next: Phase 2.
 - 2026-11-08 — Phase 2 done (skill: test-driven-development; alerts/quality/stats tests seen failing first; averaging/levels tests written alongside). 121 tests passing. — Next: Phase 3.
+- 2026-11-08 — Phase 3 done (skills: dataviz for the trend chart — single series, no legend, bands labelled with text, gaps as gaps, tooltip; frontend-ui-engineering). 130 tests. Verified in browser with Simulator "Tráfico" ×60: Elevado alert banner fired, then cleared via hysteresis; no console errors. Wake lock not available in the preview pane (fallback message shown) — check on Android. — Next: Phase 4.
 
 ---
 

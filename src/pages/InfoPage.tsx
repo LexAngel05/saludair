@@ -1,4 +1,5 @@
-import { DEFAULT_SETTINGS, LEVELS } from '../config/defaults';
+import { LEVELS } from '../config/defaults';
+import { useSettings } from '../state/settings';
 import { Disclaimer } from '../components/Disclaimer';
 import { LevelBadge } from '../components/LevelBadge';
 import { LevelScale } from '../components/LevelScale';
@@ -8,8 +9,7 @@ import { es } from '../i18n/es';
 
 export function InfoPage() {
   const s = es.pages.info;
-  // TODO(phase 4): read from the settings store instead of defaults.
-  const settings = DEFAULT_SETTINGS;
+  const { settings } = useSettings();
   return (
     <>
       <PageHeader title={s.title} intro={s.intro} />

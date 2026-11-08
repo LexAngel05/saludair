@@ -3,6 +3,8 @@ import { NavLink, Outlet } from 'react-router';
 import { es } from '../i18n/es';
 import { OFFLINE_READY_EVENT } from '../pwa-events';
 import { ROUTES } from '../routes';
+import { liveStore } from '../state/liveStore';
+import { useSettings } from '../state/settings';
 import { Icon, type IconName } from './icons';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -30,6 +32,10 @@ function LogoMark() {
 
 export function AppLayout() {
   const [offlineReady, setOfflineReady] = useState(false);
+  const { settings } = useSettings();
+
+  // Keep the app-wide live engine on the current settings.
+  useEffect(() => liveStore.setSettings(settings), [settings]);
 
   useEffect(() => {
     const onReady = () => setOfflineReady(true);

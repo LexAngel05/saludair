@@ -291,11 +291,19 @@ docs/
 - [x] **Phase 3 Live page** + notifications (service worker), wake lock (2026-11-08)
 - [x] **Phase 4 Sessions** (2026-11-08): persistence, list, detail, charts, CSV/JSON export, backup/restore
 - [x] **Phase 5 Real device** (2026-11-08, code done; **not yet tested with real hardware**): Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
-- [ ] **Phase 6 Validation page:** all tests, reference import, scatter, metrics export
+- [x] **Phase 6 Validation page** (2026-11-08): all tests, reference import, scatter, metrics export
 - [ ] **Phase 7 Info page and polish:** responsive, dark mode, empty states, accessibility pass, offline check
 - [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
 
-**Next task:** Phase 6 — Validation page: guided flows per test (start a session with `testType` + `testParams`), results per test (environments table, repeatability per run/across runs, battery runtime + mV curve, BLE range loss per distance + reconnect time, LED vs dashboard mismatch %), reference CSV import (preview, timezone, start/end-of-hour, rejected rows), hourly alignment (≥ 75 %) or 10-min, metrics (n, means, bias, MAE, RMSE, r, R², fit), scatter with 1:1 and fit lines, "muestra insuficiente" if n < 10, offer fit as correction factor, metrics CSV export. Pure logic in `core/validation.ts` + `core/referenceAlign.ts`, tests first.
+**Next task:** Phase 7 — Info page content (what PM2.5 is, levels, LED vs dashboard timing, limitations: calibration, humidity, airflow, placement/air inlet, sources from the proposal), polish: responsive check at 320/768/1024/1440, light/dark, empty states, accessibility pass (keyboard, headings, contrast, aria), offline check of the production build.
+
+**Validation map (Phase 6):**
+- `core/referenceAlign.ts` — `zonedToUtc` (Intl-based, DST-aware, no library), `parseReferenceCsv` (`,`/`;`, decimal comma with `;`, header auto-detect, `YYYY-MM-DD HH:mm`, `DD/MM/YYYY HH:mm`, ISO with Z/offset, `24:00`; end-of-interval stamps shifted back by the detected resolution; rejects counted), `alignToBins` (≥ 75 % completeness on both sides; hourly or 10-min), `compareMetrics` (n, means, bias = mean(device − ref), MAE, RMSE, Pearson r, R², OLS **device = slope × reference + intercept**, `sufficient` = n ≥ 10), `correctionFromFit` (inverts the fit → corrected = (raw − b)/m).
+- `core/validation.ts` — `repeatability` (per run + across run means), `batteryResult`, `reconnectTimes`, `bleRangeRows`, `ledMismatch`.
+- `core/exportCsv.ts#metricsCsv` — generic results CSV with `#` metadata.
+- `db/referenceRepo.ts` — reference datasets + rows.
+- UI: `pages/ValidationPage.tsx` (WAI-ARIA tabs), `components/validation/shared.tsx` (`useTestSessions`, `StartTestPanel` starts a session with `testType`/`testParams`, `TestLayout`, `DataTable`, `ExportButton`), `components/validation/tests.tsx`, `components/validation/ReferenceTest.tsx`; charts `ScatterChart` (x = reference, y = device, 1:1 + fit lines, HTML legend) and `SimpleLineChart` (battery mV).
+- "Guardar como factor de corrección" stores slope/intercept but leaves `correction.enabled` as it was (off by default), per spec.
 
 **Device map (Phase 5):**
 - `device/bleSource.ts` — chooser filtered by `namePrefix` + NUS service; TX notifications decoded with a streaming `TextDecoder` (multi-byte chars split across notifications are safe); unexpected drop → `reconnecting`, retry same device with backoff 1 s → 30 s, immediate retry on `visibilitychange` visible; user disconnect never retries. Errors mapped to `DeviceError` codes (cancelled chooser = `user-cancelled`, not shown).
@@ -347,6 +355,7 @@ docs/
 - 2026-11-08 — Phase 3 done (skills: dataviz for the trend chart — single series, no legend, bands labelled with text, gaps as gaps, tooltip; frontend-ui-engineering). 130 tests. Verified in browser with Simulator "Tráfico" ×60: Elevado alert banner fired, then cleared via hysteresis; no console errors. Wake lock not available in the preview pane (fallback message shown) — check on Android. — Next: Phase 4.
 - 2026-11-08 — Phase 4 done (skills: test-driven-development for CSV/backup/recorder — red first; frontend-ui-engineering). 147 tests. Browser check: Simulator → session with tag → stop → detail with chart, alert span, summary; no console errors. Bug found in the browser and fixed with a reproduction test: alert still open at stop was saved with peak 0. — Next: Phase 5.
 - 2026-11-08 — Phase 5 code done (skill: test-driven-development for BleSource — red first with a fake Bluetooth; SerialSource tests written alongside). 155 tests. Browser: BLE + USB buttons visible in Chrome; **real ESP32 not tested** (no hardware yet) → manual checklist. Found & fixed: implicit-return `useEffect` in AppLayout crashed the page in dev ("destroy is not a function") — always use braces in effects. — Next: Phase 6.
+- 2026-11-08 — Phase 6 done (skills: test-driven-development — referenceAlign/validation tests red first, hand-computed fixtures incl. PST/PDT; dataviz for the scatter: ≥ 2 series → legend, 1:1 reference line dashed/recessive). 171 tests. Browser: injected a synthetic 12 h reference session + hourly dataset via Vite dynamic import → page recovered device = 1.400 × ref + 2.00, n = 12, r = 1.000; saved correction 0.714 / −1.43. Synthetic data removed afterwards. Not yet exercised in the browser: CSV file picker (needs a real file), the other five tests with recorded sessions (logic covered by unit tests). — Next: Phase 7.
 
 ---
 

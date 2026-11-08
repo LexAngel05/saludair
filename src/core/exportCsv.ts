@@ -33,6 +33,18 @@ export function localIso(t: number): string {
 
 const round = (v: number, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
 
+/** Generic results CSV (validation tests): `#` metadata lines, header, rows. Numbers rounded to 3 decimals. */
+export function metricsCsv(
+  title: string,
+  meta: readonly [string, string | number | null][],
+  header: readonly string[],
+  rows: readonly (string | number | null)[][],
+): string {
+  const lines = [`# ${title}`, ...meta.map(([k, v]) => `# ${k},${csvEscape(v)}`), '#', header.map(csvEscape).join(',')];
+  for (const r of rows) lines.push(r.map((v) => csvEscape(typeof v === 'number' ? round(v, 3) : v)).join(','));
+  return lines.join(EOL) + EOL;
+}
+
 export interface SessionCsvInput {
   session: SessionRecord;
   readings: readonly ReadingRecord[];

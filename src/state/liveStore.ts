@@ -95,6 +95,10 @@ export class LiveStore {
     return () => this.linkListeners.delete(l);
   }
 
+  openEpisodePeak(): number | null {
+    return this.state.snapshot.alert.episode?.peak ?? null;
+  }
+
   get source(): DeviceSource | null {
     return this.stream?.source ?? null;
   }

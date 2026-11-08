@@ -289,13 +289,21 @@ docs/
 - [x] **Phase 1 Data layer** (2026-11-08): line parser + tests, DeviceSource, Simulator
 - [x] **Phase 2 Core logic** (2026-11-08): averages, levels, alert state machine, quality flags, stats + tests
 - [x] **Phase 3 Live page** + notifications (service worker), wake lock (2026-11-08)
-- [ ] **Phase 4 Sessions:** persistence, list, detail, charts, CSV/JSON export, backup/restore
+- [x] **Phase 4 Sessions** (2026-11-08): persistence, list, detail, charts, CSV/JSON export, backup/restore
 - [ ] **Phase 5 Real device:** Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
 - [ ] **Phase 6 Validation page:** all tests, reference import, scatter, metrics export
 - [ ] **Phase 7 Info page and polish:** responsive, dark mode, empty states, accessibility pass, offline check
 - [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
 
-**Next task:** Phase 4 — sessions: recorder subscribed to `liveStore.onPacket/onAlert/onLink` (batched Dexie writes every `dbFlushIntervalMs`), start/stop with tags + test type on Live, wake lock tied to an active session, Sessions list with filters, Session detail (TimeSeriesChart with alert spans, summary from `summarizeSession`, raw/corrected toggle), CSV export with metadata header, JSON backup/restore, Settings form, reset data.
+**Next task:** Phase 5 — real device: `bleSource` (Web Bluetooth, NUS UUIDs from `config/device.ts`, name-prefix filter, notifications on TX, `gattserverdisconnected` → reconnect with backoff to the same `BluetoothDevice`, reconnect on `visibilitychange`), `serialSource` (Web Serial, `TextDecoderStream`), browser-support detection (hide USB where unsupported, clear message on Safari/iOS), enable the buttons in `ConnectionCard`, `docs/firmware-contract.md`.
+
+**Sessions map (Phase 4):**
+- `state/recorder.ts` — `SessionRecorder(db, events)`; readings buffered and `bulkAdd`ed every `dbFlushIntervalMs` (+ on pagehide/hidden via `state/recorderInstance.ts`); alert episodes (one row per episode, level = highest, peak) and link events written as they happen through a serialized write queue. Settings snapshot = `structuredClone(settings)` at start. Wake lock now tied to an active session.
+- `db/sessionsRepo.ts` — create/end/get bundle/list/delete, `exportBackup`, `restoreBackup` (atomic replace), `resetAllData` (keeps settings).
+- `core/exportCsv.ts` — `sessionCsv` (`#` metadata header incl. settings snapshot JSON + summary, then rows; `pm25_raw` always present, `pm25_value` raw or corrected), `csvEscape` (RFC 4180 + formula-injection guard), `localIso` (America/Tijuana). Downloads add a UTF-8 BOM for Excel.
+- `core/backup.ts` — backup JSON format + `parseBackup` validation (rejects other apps, newer schema, bad shape).
+- `core/series.ts` — readings → chart series with null gaps (> 3 intervals).
+- Pages: Sessions (filters by tag/test type), SessionDetail (raw/corrected toggle only if the snapshot had correction enabled; chart with alert spans; summary; level time; alerts; snapshot JSON; delete with confirm), Settings (form in human units → validated → saved; backup export/import with confirm; reset data with confirm; blocked while recording).
 
 **Live map (Phase 3):**
 - `core/liveEngine.ts` — pure: `addPacket` → alert events (5-min mean from packet timestamps; alerts use the mean once it is at least "estimado"), `pause(t)` on link loss, `snapshot({now, link, …})` → short/level/hour means, flags, alert state, 10-min trend with null gaps. Keeps ~1 h in memory.
@@ -331,6 +339,7 @@ docs/
 - 2026-11-08 — Phase 1 done (skill: test-driven-development; tests written first, seen failing, then implemented). 69 tests passing. Note: `erasableSyntaxOnly` forbids constructor parameter properties — declare fields explicitly. — Next: Phase 2.
 - 2026-11-08 — Phase 2 done (skill: test-driven-development; alerts/quality/stats tests seen failing first; averaging/levels tests written alongside). 121 tests passing. — Next: Phase 3.
 - 2026-11-08 — Phase 3 done (skills: dataviz for the trend chart — single series, no legend, bands labelled with text, gaps as gaps, tooltip; frontend-ui-engineering). 130 tests. Verified in browser with Simulator "Tráfico" ×60: Elevado alert banner fired, then cleared via hysteresis; no console errors. Wake lock not available in the preview pane (fallback message shown) — check on Android. — Next: Phase 4.
+- 2026-11-08 — Phase 4 done (skills: test-driven-development for CSV/backup/recorder — red first; frontend-ui-engineering). 147 tests. Browser check: Simulator → session with tag → stop → detail with chart, alert span, summary; no console errors. Bug found in the browser and fixed with a reproduction test: alert still open at stop was saved with peak 0. — Next: Phase 5.
 
 ---
 

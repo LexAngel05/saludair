@@ -80,7 +80,8 @@ export function TimeSeriesChart({
       label: {
         display: true,
         content: `${es.levels[a.level]}`,
-        position: { x: 'start', y: 'end' },
+        // Top-right of the span, away from the band labels (top-left).
+        position: { x: 'end', y: 'start' },
         color: theme.ink,
         backgroundColor: alpha(theme.surface.startsWith('#') ? theme.surface : '#ffffff', 0.85),
         font: { size: 11, weight: 700 },

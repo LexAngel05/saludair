@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useLocation } from 'react-router';
 import { es } from '../i18n/es';
 import { OFFLINE_READY_EVENT } from '../pwa-events';
 import { ROUTES } from '../routes';
@@ -34,8 +34,13 @@ export function AppLayout() {
   const [offlineReady, setOfflineReady] = useState(false);
   const { settings } = useSettings();
 
+  const { pathname } = useLocation();
+
   // Keep the app-wide live engine on the current settings.
   useEffect(() => liveStore.setSettings(settings), [settings]);
+
+  // Each page starts at the top.
+  useEffect(() => window.scrollTo(0, 0), [pathname]);
 
   useEffect(() => {
     const onReady = () => setOfflineReady(true);

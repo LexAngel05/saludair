@@ -12,6 +12,8 @@ import { es } from '../i18n/es';
 import { formatNumber } from '../lib/format';
 import { useWakeLock } from '../platform/useWakeLock';
 import { liveStore, useLive } from '../state/liveStore';
+import { useRecorder } from '../state/recorderInstance';
+import { SessionCard } from '../components/SessionCard';
 import { useSettings } from '../state/settings';
 
 const LINK_TEXT = {
@@ -34,7 +36,9 @@ export function LivePage() {
   const live = useLive();
   const snap = live.snapshot;
   const connected = live.kind !== null;
-  const wakeLock = useWakeLock(connected);
+  const rec = useRecorder();
+  // Spec §4: keep the screen on during an active session.
+  const wakeLock = useWakeLock(rec.activeId !== null);
 
   const shortMean = snap.short.mean;
   const lvl = snap.level;
@@ -106,6 +110,8 @@ export function LivePage() {
           <ConnectionCard live={live} />
         </div>
 
+        <SessionCard live={live} />
+
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatTile icon={<Icon name="target" size={18} />} label={s.hourMean} value={formatNumber(snap.hour.mean)} unit={es.units.pm} />
           <StatTile icon={<Icon name="droplet" size={18} />} label={s.tiles.humidity} value={formatNumber(last?.rh)} unit={es.units.percent} />
@@ -138,7 +144,7 @@ export function LivePage() {
           )}
         </Card>
 
-        {connected && (
+        {rec.activeId !== null && (
           <p className="flex items-start gap-2 text-sm text-ink-muted">
             <Icon name="sun" size={18} />
             {wakeLock ? s.wakeLockOn : s.keepOpen}

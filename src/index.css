@@ -1,49 +1,60 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/manrope';
 
 /*
  * Design tokens. Colors are CSS variables so light/dark switch without class juggling.
+ * Theme: system by default; <html data-theme="light|dark"> forces one (ThemeToggle).
  * Level colors are always paired with text in components (never color-only).
- * Contrast pairs (fg on bg) checked for WCAG AA ≥ 4.5:1.
+ * Contrast pairs (fg on bg) target WCAG AA ≥ 4.5:1.
  */
 :root {
   color-scheme: light;
-  --bg: #f4f7f6;
+  --bg: #f2f6f5;
+  --bg-glow: #dcefeb;
   --surface: #ffffff;
-  --surface-2: #eaf0ee;
-  --ink: #13201e;
-  --ink-muted: #4a5b58;
-  --line: #d3dedb;
+  --surface-2: #eef3f1;
+  --ink: #0f1c1a;
+  --ink-muted: #4f605c;
+  --ink-faint: #6d7d79;
+  --line: #d9e3e0;
   --brand: #0f5d5a;
   --brand-ink: #ffffff;
+  --brand-soft: #dff0ec;
   --focus: #1a73e8;
+  --shadow: 0 1px 2px rgb(15 40 36 / 0.06), 0 4px 16px -8px rgb(15 40 36 / 0.12);
 
   --lvl-low-bg: #e2f2e7;
   --lvl-low-fg: #17603a;
-  --lvl-low-solid: #2e8b57;
+  --lvl-low-solid: #2e9a5e;
   --lvl-caution-bg: #fdf0d2;
   --lvl-caution-fg: #7a4b00;
-  --lvl-caution-solid: #d99a1e;
+  --lvl-caution-solid: #e0a020;
   --lvl-elevated-bg: #fbe4e1;
   --lvl-elevated-fg: #a1231a;
-  --lvl-elevated-solid: #d0412f;
-  --lvl-none-bg: #e9edec;
-  --lvl-none-fg: #47524f;
+  --lvl-elevated-solid: #d6442f;
+  --lvl-none-bg: #e9eeec;
+  --lvl-none-fg: #4a5552;
+  --lvl-none-solid: #9aa8a4;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;
-    --bg: #0b1513;
-    --surface: #121f1c;
-    --surface-2: #1a2a27;
-    --ink: #e6efec;
+    --bg: #08110f;
+    --bg-glow: #0f2a26;
+    --surface: #0f1b18;
+    --surface-2: #162522;
+    --ink: #e7f0ed;
     --ink-muted: #a3b5b0;
-    --line: #2a3d39;
+    --ink-faint: #81948f;
+    --line: #22342f;
     --brand: #5cc3bb;
-    --brand-ink: #062320;
+    --brand-ink: #052220;
+    --brand-soft: #12302c;
     --focus: #8ab4f8;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
 
-    --lvl-low-bg: #12301f;
+    --lvl-low-bg: #10301e;
     --lvl-low-fg: #8fdcaa;
     --lvl-low-solid: #4cbf7a;
     --lvl-caution-bg: #33270b;
@@ -52,24 +63,29 @@
     --lvl-elevated-bg: #3a1613;
     --lvl-elevated-fg: #ffaa9f;
     --lvl-elevated-solid: #f0695a;
-    --lvl-none-bg: #1e2a28;
+    --lvl-none-bg: #1c2926;
     --lvl-none-fg: #b5c3bf;
+    --lvl-none-solid: #5d6e6a;
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0b1513;
-  --surface: #121f1c;
-  --surface-2: #1a2a27;
-  --ink: #e6efec;
+  --bg: #08110f;
+  --bg-glow: #0f2a26;
+  --surface: #0f1b18;
+  --surface-2: #162522;
+  --ink: #e7f0ed;
   --ink-muted: #a3b5b0;
-  --line: #2a3d39;
+  --ink-faint: #81948f;
+  --line: #22342f;
   --brand: #5cc3bb;
-  --brand-ink: #062320;
+  --brand-ink: #052220;
+  --brand-soft: #12302c;
   --focus: #8ab4f8;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
 
-  --lvl-low-bg: #12301f;
+  --lvl-low-bg: #10301e;
   --lvl-low-fg: #8fdcaa;
   --lvl-low-solid: #4cbf7a;
   --lvl-caution-bg: #33270b;
@@ -78,8 +94,9 @@
   --lvl-elevated-bg: #3a1613;
   --lvl-elevated-fg: #ffaa9f;
   --lvl-elevated-solid: #f0695a;
-  --lvl-none-bg: #1e2a28;
+  --lvl-none-bg: #1c2926;
   --lvl-none-fg: #b5c3bf;
+  --lvl-none-solid: #5d6e6a;
 }
 
 @theme inline {
@@ -88,9 +105,11 @@
   --color-surface-2: var(--surface-2);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
   --color-line: var(--line);
   --color-brand: var(--brand);
   --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
   --color-focus: var(--focus);
   --color-lvl-low-bg: var(--lvl-low-bg);
   --color-lvl-low-fg: var(--lvl-low-fg);
@@ -103,21 +122,27 @@
   --color-lvl-elevated-solid: var(--lvl-elevated-solid);
   --color-lvl-none-bg: var(--lvl-none-bg);
   --color-lvl-none-fg: var(--lvl-none-fg);
+  --color-lvl-none-solid: var(--lvl-none-solid);
+  --shadow-card: var(--shadow);
 
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: 'Manrope Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace;
 }
 
-html,
-body {
+html {
   background: var(--bg);
-  color: var(--ink);
 }
 
 body {
+  color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   font-variant-numeric: tabular-nums;
+  /* One soft glow behind the header; flat everywhere else. */
+  background:
+    radial-gradient(1200px 420px at 50% -180px, var(--bg-glow), transparent 70%) no-repeat,
+    var(--bg);
+  min-height: 100dvh;
 }
 
 :focus-visible {

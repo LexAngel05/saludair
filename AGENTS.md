@@ -122,7 +122,9 @@ Rules:
 - `src/db/settingsRepo.ts` — load/save/reset settings (single row id `current`).
 - `src/i18n/es.ts` — all UI strings. `src/routes.ts` — route paths. `src/AppRoutes.tsx` — routes (HashRouter in `main.tsx`, MemoryRouter in tests).
 - `src/pwa.ts` — service worker registration (prod only); `scripts/gen-icons.mjs` regenerates PNG icons from the same design as `public/icons/icon.svg`.
-- `.claude/launch.json` — `preview` (port 4173) and `dev` (5173) for the browser pane.
+- `.claude/launch.json` — `preview` (port 4173) and `dev` (5173) for the browser pane. Note: the preview build registers a service worker; after a rebuild, reload (or unregister the SW) to see changes.
+- UI kit: `components/ui.tsx` (Card, Eyebrow, Chip, EmptyState, StatTile), `components/icons.tsx` (stroke icon set), `LevelBadge` (+ `LEVEL_STYLES`, `LevelGlyph`), `LevelScale` (3-segment scale from configured thresholds), `ThemeToggle`. Design tokens in `src/index.css` (CSS vars + Tailwind `@theme inline`). Reuse these instead of new ad-hoc styles.
+- Live page already renders the real "disconnected / no data" layout (big 1-min value, 5-min badge, scale, connection card, stat tiles, trend card); Phase 3 wires data into it. Settings/Info/Live read `DEFAULT_SETTINGS` until Phase 4 adds the settings store (marked `TODO(phase 4)`).
 - Toolchain at setup: Node 24, Vite 8, React 19, TS 6, Tailwind 4, Vitest 5, Dexie 4, react-router 8, vite-plugin-pwa 2.
 
 ---
@@ -300,6 +302,7 @@ docs/
 ## 13. Session notes
 
 - 2026-11-08 — Phase 0 done: Vite+React+TS strict, Tailwind v4, hash routing with 6 placeholder pages, `i18n/es.ts`, `config/` (defaults, device, levels), Dexie schema v1 with tables + settings repo, PWA skeleton (manifest + generated SW), Vitest setup with config/db/routing tests (19 passing), lint + build passing, checked in browser (desktop + mobile, dark mode, SW registered, offline-ready banner). — Next: Phase 1.
+- 2026-11-08 — Visual pass (skill used: frontend-ui-engineering): Manrope font, new tokens, header + bottom nav redesign, theme toggle, UI kit components, Live layout in disconnected state, Validation test cards, Settings current-values list, Info level legend. Checked in browser light/dark, desktop/mobile. — Next: Phase 1.
 
 ---
 
@@ -314,7 +317,9 @@ docs/
 | 2026-11-08 | Raw data immutable + settings snapshot per session | Reproducible results after settings change |
 | 2026-11-08 | HashRouter instead of BrowserRouter | Works on GitHub Pages without 404 rewrites; also simplifies offline SW navigation |
 | 2026-11-08 | Tailwind v4 via `@tailwindcss/vite` (no tailwind.config) | Current stable; tokens defined in CSS `@theme` |
-| 2026-11-08 | System font stack, no web fonts | "No external requests at runtime" + smaller offline bundle |
+| 2026-11-08 | ~~System font stack~~ → Manrope Variable self-hosted via `@fontsource-variable/manrope` (bundled, precached as woff2) | User asked for a more attractive UI; bundled font keeps "no external requests" and works offline |
+| 2026-11-08 | Visual system: teal brand, cards 16px / controls 10px / chips full radius, one soft header glow, level glyphs (circle / triangle / square) + text | Calm, not template-looking; level never conveyed by color alone |
+| 2026-11-08 | Theme toggle (auto / claro / oscuro) added early, stored in localStorage (`saludair-theme`) with a pre-paint script in `index.html` | Per-device UI preference, not app data |
 | 2026-11-08 | Settings stored as a single Dexie row (`settings` table, id `current`) merged over defaults | Adding new settings later doesn't need a migration |
 
 ---

@@ -1,4 +1,6 @@
-import { PageHeader, Placeholder } from '../components/PageHeader';
+import { Icon } from '../components/icons';
+import { PageHeader } from '../components/PageHeader';
+import { Card, EmptyState } from '../components/ui';
 import { es } from '../i18n/es';
 
 export function SessionsPage() {
@@ -6,7 +8,9 @@ export function SessionsPage() {
   return (
     <>
       <PageHeader title={s.title} intro={s.intro} />
-      <Placeholder text={es.placeholder.comingInPhase(4)} />
+      <Card>
+        <EmptyState icon={<Icon name="sessions" />} title={s.emptyTitle} text={s.emptyText} />
+      </Card>
     </>
   );
 }

@@ -9,6 +9,13 @@
     <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <title>SaludAIR</title>
+    <script>
+      // Apply a saved theme before first paint to avoid a flash (see ThemeToggle).
+      try {
+        var t = localStorage.getItem('saludair-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

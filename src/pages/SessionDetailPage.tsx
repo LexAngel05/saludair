@@ -1,5 +1,7 @@
 import { Link } from 'react-router';
-import { PageHeader, Placeholder } from '../components/PageHeader';
+import { Icon } from '../components/icons';
+import { PageHeader } from '../components/PageHeader';
+import { Card, EmptyState } from '../components/ui';
 import { es } from '../i18n/es';
 import { ROUTES } from '../routes';
 
@@ -8,11 +10,13 @@ export function SessionDetailPage() {
   return (
     <>
       <PageHeader title={s.title}>
-        <Link to={ROUTES.sessions} className="text-brand underline">
+        <Link to={ROUTES.sessions} className="text-sm font-semibold text-brand underline">
           {s.back}
         </Link>
       </PageHeader>
-      <Placeholder text={es.placeholder.comingInPhase(4)} />
+      <Card>
+        <EmptyState icon={<Icon name="trend" />} text={es.placeholder.comingInPhase(4)} />
+      </Card>
     </>
   );
 }

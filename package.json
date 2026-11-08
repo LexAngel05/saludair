@@ -15,6 +15,7 @@
     "test:e2e": "echo \"E2E tests are added in Phase 8\""
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
     "chart.js": "^4.6.1",
     "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-annotation": "^3.1.0",

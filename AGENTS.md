@@ -287,7 +287,7 @@ docs/
 
 - [x] **Phase 0 Setup** (2026-11-08): tooling, strict TS, Tailwind, routing, i18n, settings defaults, Dexie schema v1, PWA skeleton, CI-ready scripts
 - [x] **Phase 1 Data layer** (2026-11-08): line parser + tests, DeviceSource, Simulator
-- [ ] **Phase 2 Core logic:** averages, levels, alert state machine, quality flags, stats + tests
+- [x] **Phase 2 Core logic** (2026-11-08): averages, levels, alert state machine, quality flags, stats + tests
 - [ ] **Phase 3 Live page** + notifications (service worker), wake lock
 - [ ] **Phase 4 Sessions:** persistence, list, detail, charts, CSV/JSON export, backup/restore
 - [ ] **Phase 5 Real device:** Web Bluetooth, Web Serial, reconnect, browser-support messages, docs/firmware-contract.md
@@ -295,7 +295,15 @@ docs/
 - [ ] **Phase 7 Info page and polish:** responsive, dark mode, empty states, accessibility pass, offline check
 - [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
 
-**Next task:** Phase 2 — `src/core`: time-based rolling means (1 min / 5 min / 1 h, completeness, warm-up exclusion), level classification ("estimado" / "datos insuficientes"), alert state machine, quality flags, session stats. Tests first.
+**Next task:** Phase 3 — Live page wired to a `DeviceStream` (Simulator first): live engine (recent buffer → 1-min / 5-min means → `levelFromWindow` → `stepAlert` → quality flags), status bar, sparkline with threshold bands, alerts banner + `showNotification` via service worker + vibrate + optional sound, Screen Wake Lock during sessions.
+
+**Core map (Phase 2)** — all pure, all tested:
+- `core/averaging.ts` — `windowMean(readings, endT, windowMs, s)` over (end − window, end], warm-up excluded, `complete` at ≥ 75 % of expected samples, `coveredMs` = count × interval; `rollingMeans` (O(n) two-pointer); `applyCorrection` (read-time only).
+- `core/levels.ts` — `classifyLevel`, `levelFromWindow` → `{level, quality: complete | estimated | insufficient}` (estimated when ≥ `minEstimateDataMs` of valid data).
+- `core/alerts.ts` — `stepAlert(state, {t, mean5|null}, s)` → events `raise{level, notify}` / `lower` / `end{episode}`. Episode = continuous active period; level = highest reached; peak = max 5-min mean. Null input or a gap > staleTimeoutMs resets timers (pause); active alert is kept during pauses. After lowering a level, that level's clear timer restarts (one level at a time).
+- `core/quality.ts` — `computeQualityFlags` (order: disconnected, stale, packet-loss, high-humidity, warmup, reboot, low-battery), `isAlertPaused`.
+- `core/stats.ts` — `percentile` (type 7), `describeValues` (sample SD, CV %), `timeWeightedAverage` (gaps > 3 intervals weigh one interval), `summarizeSession` (§8.6; minutes per level from the rolling 5-min level, unclassified time reported separately; `corrected` flag).
+- Live 1-min/5-min means use **raw** pm25 (spec §8.1); the correction factor applies to session stats/charts/exports only when the viewer selects "corregido".
 
 **Data layer map (Phase 1):**
 - `device/lineParser.ts` — `parseLine` (never throws; reasons: empty, unknown-version, field-count, not-a-number, not-an-integer, out-of-range) and `LineBuffer` (chunk reassembly, overflow guard).
@@ -313,6 +321,7 @@ docs/
 - 2026-11-08 — Visual pass (skill used: frontend-ui-engineering): Manrope font, new tokens, header + bottom nav redesign, theme toggle, UI kit components, Live layout in disconnected state, Validation test cards, Settings current-values list, Info level legend. Checked in browser light/dark, desktop/mobile. — Next: Phase 1.
 - 2026-11-08 — User asked to keep advancing through phases without waiting for "continúa" between them ("hay que avanzar hasta donde se pueda"); still commit + update this file per phase. Hardware-dependent checks (real BLE/USB, Android) go to the manual checklist.
 - 2026-11-08 — Phase 1 done (skill: test-driven-development; tests written first, seen failing, then implemented). 69 tests passing. Note: `erasableSyntaxOnly` forbids constructor parameter properties — declare fields explicitly. — Next: Phase 2.
+- 2026-11-08 — Phase 2 done (skill: test-driven-development; alerts/quality/stats tests seen failing first; averaging/levels tests written alongside). 121 tests passing. — Next: Phase 3.
 
 ---
 

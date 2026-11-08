@@ -286,7 +286,7 @@ docs/
 ## 12. Current status
 
 - [x] **Phase 0 Setup** (2026-11-08): tooling, strict TS, Tailwind, routing, i18n, settings defaults, Dexie schema v1, PWA skeleton, CI-ready scripts
-- [ ] **Phase 1 Data layer:** line parser + tests, DeviceSource, Simulator
+- [x] **Phase 1 Data layer** (2026-11-08): line parser + tests, DeviceSource, Simulator
 - [ ] **Phase 2 Core logic:** averages, levels, alert state machine, quality flags, stats + tests
 - [ ] **Phase 3 Live page** + notifications (service worker), wake lock
 - [ ] **Phase 4 Sessions:** persistence, list, detail, charts, CSV/JSON export, backup/restore
@@ -295,7 +295,15 @@ docs/
 - [ ] **Phase 7 Info page and polish:** responsive, dark mode, empty states, accessibility pass, offline check
 - [ ] **Phase 8** E2E tests, deploy, README for teammates, manual checklist
 
-**Next task:** Phase 1 — write `src/device/lineParser.ts` tests first (partial chunks, garbage, empty optional fields, out-of-range, unknown version, reboot/boot segments, loss %), then `DeviceSource` interface and `simulatorSource`.
+**Next task:** Phase 2 — `src/core`: time-based rolling means (1 min / 5 min / 1 h, completeness, warm-up exclusion), level classification ("estimado" / "datos insuficientes"), alert state machine, quality flags, session stats. Tests first.
+
+**Data layer map (Phase 1):**
+- `device/lineParser.ts` — `parseLine` (never throws; reasons: empty, unknown-version, field-count, not-a-number, not-an-integer, out-of-range) and `LineBuffer` (chunk reassembly, overflow guard).
+- `core/sequence.ts` — boot segments, reboots, duplicates, loss (`lossPercent`). Missing seq during a link gap counts as loss (per §5 definition); disconnects are counted separately.
+- `device/types.ts` — `DeviceSource` interface (`connect/disconnect/now/setListener`, `state`), `DeviceError` codes. `now()` is the source clock: simulated time for the Simulator — use it (not `Date.now()`) for staleness/"time since last packet".
+- `device/simulator.ts` — pure seeded generator, scenarios limpio / trafico / fuente-controlada / humedad-alta / desconexion / reinicio; tuning in `config/simulator.ts`. Chunks lines into 20-byte pieces like BLE.
+- `device/simulatorSource.ts` — timer-driven `DeviceSource`, `setSpeed(1|10|60)`.
+- `device/deviceStream.ts` — source → LineBuffer → parseLine → trackSequence → `StreamPacket` events; `stats` with invalid-line counts by reason and last unknown version.
 
 ---
 
@@ -303,6 +311,8 @@ docs/
 
 - 2026-11-08 — Phase 0 done: Vite+React+TS strict, Tailwind v4, hash routing with 6 placeholder pages, `i18n/es.ts`, `config/` (defaults, device, levels), Dexie schema v1 with tables + settings repo, PWA skeleton (manifest + generated SW), Vitest setup with config/db/routing tests (19 passing), lint + build passing, checked in browser (desktop + mobile, dark mode, SW registered, offline-ready banner). — Next: Phase 1.
 - 2026-11-08 — Visual pass (skill used: frontend-ui-engineering): Manrope font, new tokens, header + bottom nav redesign, theme toggle, UI kit components, Live layout in disconnected state, Validation test cards, Settings current-values list, Info level legend. Checked in browser light/dark, desktop/mobile. — Next: Phase 1.
+- 2026-11-08 — User asked to keep advancing through phases without waiting for "continúa" between them ("hay que avanzar hasta donde se pueda"); still commit + update this file per phase. Hardware-dependent checks (real BLE/USB, Android) go to the manual checklist.
+- 2026-11-08 — Phase 1 done (skill: test-driven-development; tests written first, seen failing, then implemented). 69 tests passing. Note: `erasableSyntaxOnly` forbids constructor parameter properties — declare fields explicitly. — Next: Phase 2.
 
 ---
 

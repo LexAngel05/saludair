@@ -229,6 +229,8 @@ src/
 docs/
   firmware-contract.md
   manual-test-checklist.md
+firmware/
+  PlatformIO project (ESP32 DevKit V1, see §12 firmware map below)
 ```
 
 ### Testing
@@ -299,7 +301,7 @@ docs/
 
 **Definition of done (spec §12) — status 2026-11-08:**
 - [x] Works end-to-end with the Simulator.
-- [ ] Works with a real ESP32 over BLE (desktop + Android) and USB — code done, **waiting for firmware/hardware** (see `docs/manual-test-checklist.md`).
+- [ ] Works with a real ESP32 over BLE (desktop + Android) and USB — **verified on desktop Chrome 2026-11-10** (paired with `SaludAIR-5020`, live readings updating every 2 s, "Datos en orden"); emulated sensor. **Android not yet exercised** (see `docs/manual-test-checklist.md`).
 - [x] Loads and works with the network off after the first visit (verified on the production build).
 - [x] A single spike never triggers an alert (unit-tested in `core/alerts.test.ts`).
 - [x] Disconnected / stale / packet loss / reboot / high humidity / warm-up states are visible.
@@ -310,7 +312,7 @@ docs/
 
 **Next tasks (all phases done; remaining work needs people/hardware):**
 1. ~~Create the GitHub repo and deploy~~ — done 2026-11-08 (see Definition of done). Push to `main` only when the user asks.
-2. Hardware team implements `docs/firmware-contract.md`; run `docs/manual-test-checklist.md` (USB → BLE desktop → Android).
+2. ~~Hardware team implements `docs/firmware-contract.md`~~ — firmware written and flashed 2026-11-10; ~~connect from the dashboard over BLE on desktop~~ — done and verified same day. **Sensor still emulated** (no PMS5003 wired). Next: same test over Android; once the real PMS5003 is wired, flip `HAS_PMS5003` in `firmware/src/main.cpp` and implement the UART read; run the rest of `docs/manual-test-checklist.md`.
 3. Run the real validation tests and fill in the report; resolve Open questions (thresholds after NOM-172 review → toggle "Umbrales aprobados").
 4. Optional: `npm audit` review of dev dependencies; 320 px / tablet and screen-reader passes.
 
@@ -339,6 +341,16 @@ docs/
 - `device/serialSource.ts` — Web Serial 115200 baud, read loop with streaming decoder; unplug → `reconnecting`, re-plug of the same port → reopen.
 - `platform/support.ts` — `detectSupport()` → ble / serial / ios / secure. `ConnectionCard` hides USB where unsupported and explains iOS / non-Chrome / non-HTTPS.
 - `docs/firmware-contract.md` — for the hardware team: transport, line format, ranges, empty optional fields, reboot/seq rules, LED thresholds, Arduino pseudocode, self-test.
+
+**Firmware map (2026-11-10, outside the 8 web phases — hardware track):**
+- `firmware/` — PlatformIO project, `env:esp32dev` (ESP32 DevKit V1, board `esp32dev`, framework `arduino`). Detected on this dev machine as a CH340 USB-serial bridge; `platformio.ini` pins `upload_port`/`monitor_port` to `COM4` — change per machine.
+- `firmware/src/main.cpp` — implements `docs/firmware-contract.md` exactly: one `v1,...` line every 2 s over USB serial and BLE NUS (`NimBLE-Arduino` ^2.5.2; **2.x required** — 1.x uses the old `ble_gap_conn_desc*` callback API, not `NimBLEConnInfo&`). Device name `SaludAIR-<4 hex from MAC>` so the dashboard's prefix filter (`SaludAIR`) finds it; advertising restarts on disconnect.
+- **Sensor is emulated** (`readPm()`): no PMS5003 wired yet, so it generates a plausible baseline (~5–18 µg/m³) with drift and occasional multi-reading spikes (none in the first boot minute, so warm-up/first readings look clean). Flip `HAS_PMS5003` to `1` and replace `readPm()`'s body with a real UART2 frame read when the sensor is wired — the 10-reading average, LED levels, and packet framing downstream don't change. `HAS_RH_SENSOR` / `HAS_BATTERY_ADC` are the same kind of flag for the optional fields (both `0` for now → `rh`/`temp`/`bat_mv` sent empty, per contract).
+- Debug/boot logs are printed with a leading `#` (contract rule: the dashboard and any serial-port reader ignore those as invalid lines, never as data) — see boot sequence, BLE connect/disconnect events.
+- Onboard LED (GPIO2) blinks faster as `lvl` rises — bench-visible level indicator until the real RGB LED is wired.
+- Bug found and fixed the same day: `NimBLEAdvertising::setName()` silently fails (returns false, no exception) when the main advertising packet has no room left — the 128-bit service UUID (18 bytes) + flags (3 bytes) already leave only ~10 of the legacy 31-byte budget, less than the name needs. Confirmed with a raw `bleak` scan from Python: `local_name` came back `None` even though the service UUID was visible. Fix: `advertising->enableScanResponse(true)` before `setName()`, which routes the name into the scan response packet (its own 31-byte budget) instead. Re-scanning confirmed `local_name = SaludAIR-5020`. Takeaway for next time: a 128-bit custom service UUID essentially mandates scan-response advertising if a name is also needed.
+- Verified 2026-11-10: built and flashed over USB (chip `ESP32-D0WD-V3`, MAC `20:50:0d:00:d9:90`); serial monitor shows the boot log then `v1,0,0,...` lines incrementing `seq`/`uptime_s` every 2 s, lvl `0` (Bajo) at baseline. **Paired from the dashboard over Web Bluetooth and verified live** (desktop Chrome, `npm run dev`): picked `SaludAIR-5020` in the chooser, En vivo showed "Conectado" / "Datos en orden" and the 1-min value updating every ~2 s. **Not yet verified:** Android.
+- First PlatformIO run downloaded ~300–500 MB (toolchain + framework); from one network that CDN was a single non-anycast server in Germany (~20–30 KB/s, hours); from the home network it was ~7 MB/s (minutes). If a future machine hits the slow case, ask before switching the registry (a faster community mirror exists but is a third-party source — got flagged by the auto-mode classifier last time and needs explicit approval).
 
 **Sessions map (Phase 4):**
 - `state/recorder.ts` — `SessionRecorder(db, events)`; readings buffered and `bulkAdd`ed every `dbFlushIntervalMs` (+ on pagehide/hidden via `state/recorderInstance.ts`); alert episodes (one row per episode, level = highest, peak) and link events written as they happen through a serialized write queue. Settings snapshot = `structuredClone(settings)` at start. Wake lock now tied to an active session.
@@ -388,6 +400,7 @@ docs/
 - 2026-11-08 — Phase 7 done (skills: frontend-ui-engineering — accessibility/responsive checklist; dataviz guidance kept for charts). Checked: mobile 375 px (no horizontal scroll), light + dark, offline with server stopped, contrast script. Not checked: 320 px and tablet widths explicitly, screen reader pass. — Next: Phase 8.
 - 2026-11-08 — Phase 8 done (no Playwright skill exists — used Playwright directly; frontend-ui-engineering for the final fixes). E2E 3/3 passing against the production build; screenshots generated and reviewed; fixed "Simulador (Simulador)" duplicate label. Not done (needs user/team): GitHub repo + deploy, real hardware tests. — Next: see "Next tasks" above.
 - 2026-11-08 — Published (user approved): created public repo LexAngel05/saludair in the browser, pushed `main`, set Pages source to GitHub Actions; first workflow run green (lint, tests, contrast, build, deploy). Live site checked: HTTPS, Web Bluetooth available, SW scope `/saludair/`, manifest/icons 200, Simulator + chart work, no console errors. — Next: hardware testing with the checklist (Android over the HTTPS URL).
+- 2026-11-10 — Firmware (hardware track, not a numbered web phase): user has a real ESP32 DevKit V1 (USB-C, CH340 bridge) wired up but no PMS5003 yet — asked for PlatformIO setup + firmware that emulates the sensor until it's wired, with everything logged over serial. Detected on `COM4`; set up `firmware/` (PlatformIO, `env:esp32dev`), wrote `firmware/src/main.cpp` implementing `docs/firmware-contract.md` (NUS BLE + USB serial, identical `v1,...` line, emulated PMS5003, `#`-prefixed debug logs, onboard-LED level indicator). First build hit two issues, both fixed: (1) official PlatformIO registry download was ~20–30 KB/s from this network — a single non-anycast server in Germany, not a general connectivity problem (confirmed: 3.6 MB/s to Cloudflare at the same time) — asked the user before trying a faster third-party mirror (`pioarduino` fork, auto-mode had already blocked that edit as untrusted); user chose to keep the official registry and retry from home, where it ran at ~7 MB/s; (2) pinned `NimBLE-Arduino @ ^1.4.1` resolved to 1.4.x, whose callback API (`ble_gap_conn_desc*`) doesn't match the 2.x API (`NimBLEConnInfo&`) the code was written against — repinned to `^2.5.2`. Built and flashed; serial monitor confirms boot logs + `v1,0,0,...` lines every 2 s, lvl 0 at baseline. Windows' Bluetooth radio was off (adapter present but disabled) — the chooser showed no devices at all until the user turned it on in Windows Settings. Then the chooser still didn't show the device: a raw `bleak` BLE scan (Python) confirmed the ESP32 was advertising its service UUID but with `local_name = None` — `NimBLEAdvertising::setName()` had silently failed because the 128-bit service UUID already used most of the 31-byte legacy advertising budget. Fixed by enabling scan-response advertising (`enableScanResponse(true)`) before `setName()`, which gives the name its own packet; re-scan confirmed `local_name = SaludAIR-5020`. Reflashed, then paired from the dashboard in Chrome (via the browser-automation tool, with the user doing the native chooser selection): **En vivo** showed "Conectado" / "Datos en orden", live 1-min value updating every ~2 s (10 → 18 µg/m³ across one check). Main goal met: real ESP32 → Web Bluetooth → dashboard, no dashboard code changes needed (Phase 5 already covered it). — Next: same test on Android; wire the real PMS5003 and flip `HAS_PMS5003`.
 
 ---
 
@@ -411,6 +424,10 @@ docs/
 | 2026-11-08 | Reference fit is device = m·reference + b (EPA convention); correction offered as its inverse (raw − b)/m, saved but left disabled | Standard sensor-evaluation practice; spec says correction off by default |
 | 2026-11-08 | Missing seq during a BLE gap counts as packet loss; disconnects counted separately | Spec §5 defines loss as missing seq within a boot segment |
 | 2026-11-08 | Settings stored as a single Dexie row (`settings` table, id `current`) merged over defaults | Adding new settings later doesn't need a migration |
+| 2026-11-10 | Firmware emulates PMS5003 readings behind `HAS_PMS5003` until the sensor is wired | Lets the team test real BLE/USB + the dashboard end-to-end before hardware is ready, with no behavior change once the real sensor is swapped in |
+| 2026-11-10 | Firmware uses `NimBLE-Arduino @ ^2.5.2`, not 1.x | 2.x's `NimBLEConnInfo&`-based callbacks are the current API; 1.x (`ble_gap_conn_desc*`) is legacy and was about to be deprecated in the library itself |
+| 2026-11-10 | Stayed on PlatformIO's official registry instead of a faster third-party mirror when the download was slow | Mirror is a third-party source (auto-mode flagged the edit as untrusted); user chose to keep the official source and just retry on a better network |
+| 2026-11-10 | Firmware enables BLE scan-response advertising (`enableScanResponse(true)`) | A 128-bit custom service UUID alone almost fills the 31-byte legacy advertising packet; the device name (required for the dashboard's `namePrefix` chooser filter) needs its own scan-response packet or `setName()` silently fails |
 
 ---
 
